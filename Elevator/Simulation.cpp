@@ -9,7 +9,7 @@ extern const int ElevatorNumber; //电梯数
 extern const int T_Into_F;       //乘客进楼时间间隔上限
 extern const int EWT;            //电梯等待时间
 extern const int WaitingTime;    //乘客等待时间
-extern const int MovingT;        //电梯移动一楼的速度
+extern const int MovingT;        //电梯移动一楼所用时间
 
 State::State(Evt *p)
 {
@@ -23,18 +23,25 @@ State::State(Evt *p)
 
 void State::EvaMove(int n, int floor)
 {
+    
     /////////////////
     //Wait for make//
     /////////////////
 }
 void State::EvaMoveDone()
 {
+    //若有电梯停止事件则触发停止事件：先判断到达指定楼层，然后判断该层有同方向call
+    //若已达到电梯target，则判断其新的target
+    //若无则根据target设置下一个move
+    //若无下一个move改变电梯状态为停止，并设置电梯返回本垒层事件
     /////////////////
     //Wait for make//
     /////////////////
 }
 void State::CallEva()
 {
+    //若有电梯现楼层到target楼层有呼叫楼层，则
+    //若有停止电梯，改变其target为该层
     /////////////////
     //Wait for make//
     /////////////////
@@ -67,9 +74,10 @@ void State::PIF()
         setRushB();
     //下面是信息输出
     if (floor)
-        std::cout << floor << "楼进了一个人.\n";
+        std::cout << e->time() << "t:\t" << floor << "楼进入了1个人.\n";
     else
-        std::cout << "-1楼进了一个人.\n";
+        std::cout << e->time() << "t:\t"
+                  << "-1楼进入了1个人.\n";
 }
 void State::setRushB() //空楼进人或原Rush事件结束后调用，生成rush事件
 {
@@ -105,9 +113,10 @@ void State::RushB()
         delete temp;
 
         if (min)
-            std::cout << min << "楼离开了一个人.\n";
+            std::cout << e->time() << "t:\t" << min << "楼离开了1个人.\n";
         else
-            std::cout << "-1楼离开了一个人.\n";
+            std::cout << e->time() << "t:\t"
+                      << "-1楼离开了1个人.\n";
     }
     setRushB();
 }
@@ -154,7 +163,6 @@ void Sim::begin()
 {
     std::cout << "开始模拟" << std::endl;
     s.PIF();
-    /////////////////
-    //Wait for make//
-    /////////////////
+    while (1)
+        e.EvtHappen();
 }

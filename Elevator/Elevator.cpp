@@ -1,4 +1,4 @@
-#include "Simulation.h"
+#include "Simulation.cpp"
 int main()
 {
     Sim *sim = new Sim();

@@ -3,8 +3,8 @@ const int FLOOR = 5;
 const int ElevatorNumber = 2; //电梯数
 const int T_Into_F = 100;     //乘客进楼时间间隔上限
 const int EWT = 300;          //电梯等待时间
-const int WaitingTime = 40;   //乘客等待时间
-const int MovingT = 70;       //电梯移动一楼的速度
+const int WaitingTime = 400;  //乘客等待时间
+const int MovingT = 70;       //电梯移动一楼所用时间
 
 class Evt;
 
