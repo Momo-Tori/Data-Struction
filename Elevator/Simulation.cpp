@@ -53,6 +53,7 @@ void State::FBIOpenTheDoor(int eva)
 }
 void State::IOEva(int eva)
 {
+
     /////////////////
     //Wait for make//
     /////////////////
@@ -75,7 +76,7 @@ void State::CloseDoor(int eva)
         E[eva].IFDO = 0;
         return;
     }
-    
+
     ///////////////////////
     //We'll be right back//
     ///////////////////////
@@ -145,8 +146,8 @@ void State::PIF(int i = 0)
         Calldown[floor] = 1;
         CallEva(floor, elevator::Down);
     }
-    if (!e->EvtTraverse(RushB)) //没有人想离开，即这是第一个人
-        setRushB();
+    if (!e->EvtTraverse(RushB,floor)) //第n层楼没有人想离开，即这是第一个人
+        e->AddEvt(temp->giveuptime,RushB,floor);
     //下面是信息输出
     if (floor)
         std::cout << e->time() << "t:\t" << floor << "楼进入了1个人.\n";
@@ -154,48 +155,22 @@ void State::PIF(int i = 0)
         std::cout << e->time() << "t:\t"
                   << "-1楼进入了1个人.\n";
 }
-void State::setRushB(int i = 0) //空楼进人或原Rush事件结束后调用，生成rush事件
+void State::RushB(int floor)
 {
-    i = 0;
-    int min;
-    while (i < FLOOR && !PInF[i].next) //跳过没有人的楼层
-        i++;
-    min = i++;
-    while (i < FLOOR) //寻找楼层放弃时间最近的人
+    
+    if (PInF[floor].next&&e->time() == PInF[floor].next->giveuptime) //存在要放弃的人仍然未进入电梯
     {
-        if (PInF[i].next && PInF[i].next->giveuptime < PInF[min].next->giveuptime)
-            min = i;
-        i++;
-    }
-    if (min < FLOOR)
-        e->AddEvt(PInF[min].next->giveuptime, RushB); //若有人则设置rushb事件
-}
-void State::RushB(int i)
-{
-    i = 0;
-    int min;
-    while (i < FLOOR && !PInF[i].next) //跳过没有人的楼层
-        i++;
-    min = i++;
-    while (i < FLOOR) //寻找楼层放弃时间最近的人
-    {
-        if (PInF[i].next && PInF[i].next->giveuptime < PInF[min].next->giveuptime)
-            min = i;
-        i++;
-    }
-    if (min < FLOOR && e->time() == PInF[min].next->giveuptime) //存在要放弃的人仍然未进入电梯
-    {
-        auto temp = (PInF + min)->next;
-        PInF[min].next = temp->next;
+        auto temp = (PInF + floor)->next;
+        PInF[floor].next = temp->next;
         delete temp;
-
-        if (min)
-            std::cout << e->time() << "t:\t" << min << "楼离开了1个人.\n";
+        if (floor)
+            std::cout << e->time() << "t:\t" << floor << "楼离开了1个人.\n";
         else
             std::cout << e->time() << "t:\t"
                       << "-1楼离开了1个人.\n";
     }
-    setRushB();
+    if(PInF[floor].next)
+        e->AddEvt(PInF[floor].next->giveuptime,RushB,floor);
 }
 
 void Evt::AddEvt(int t, auto foo, int n = 0) //添加事件
@@ -215,7 +190,7 @@ void Evt::EvtHappen()
     (s->*(temp->Finish))(temp->n); //调用s对应的函数
     delete temp;
 }
-bool Evt::EvtTraverse(auto foo, int i = -1)
+bool Evt::EvtTraverse(void (State::*foo)(int), int i = -1)
 {
     auto pt = &Head;
     while (pt->next)
@@ -227,7 +202,7 @@ bool Evt::EvtTraverse(auto foo, int i = -1)
         return 1;
     return 0;
 }
-void Evt::EvtDelete(auto foo)
+void Evt::EvtDelete(void (State::*foo)(int))
 {
     auto pt = &Head;
     while (pt->next && pt->next->Finish != foo)

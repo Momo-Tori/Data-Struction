@@ -1,13 +1,12 @@
 #include <iostream>
 const int FLOOR = 5;
-const int ElevatorNumber = 2; //电梯数
-const int T_Into_F = 200;     //乘客进楼时间间隔上限
-const int EWT = 300;          //电梯等待时间
-const int WaitingTime = 400;  //乘客等待时间
-const int MovingT = 70;       //电梯移动一楼所用时间
-const int Doortime = 20;      //开关门时间
-const int CloseDoorWaitingtime = 40;//关门测试时间
-
+const int ElevatorNumber = 2;        //电梯数
+const int T_Into_F = 200;            //乘客进楼时间间隔上限
+const int EWT = 300;                 //电梯等待时间
+const int WaitingTime = 400;         //乘客等待时间
+const int MovingT = 70;              //电梯移动一楼所用时间
+const int Doortime = 20;             //开关门时间
+const int CloseDoorWaitingtime = 40; //关门测试时间
 
 class Evt;
 
@@ -56,12 +55,11 @@ public:
     void EvaMoveDone(int);                         //事件函数，移动结束事件
     void CallEva(int floor, elevator::state flag); //呼叫电梯命令，发起电梯调配
     void FBIOpenTheDoor(int);                      //电梯开门及之后的事件处理
-    void IOEva(int);//乘客进出电梯，先出后进
-    void CloseDoor(int);//关闭电梯，寻找下一个target楼层，执行EvaMove.
-    void HomeSweetHome(int); //电梯开始返回本垒层
-    void PIF(int);           //事件函数，People Into Floor乘客进楼事件
-    void setRushB(int);      //命令，设置RushB事件
-    void RushB(int);         //事件函数，判断有没有人等不及润了
+    void IOEva(int);                               //乘客进出电梯，先出后进
+    void CloseDoor(int);                           //关闭电梯，寻找下一个target楼层，执行EvaMove.
+    void HomeSweetHome(int);                       //电梯开始返回本垒层
+    void PIF(int);                                 //事件函数，People Into Floor乘客进楼事件
+    void RushB(int);                               //事件函数，判断有没有人等不及润了
 };
 
 struct event
@@ -90,7 +88,6 @@ public:
     void EvtDelete(auto foo);          //删除触发函数为foo的第一个事件.
     int time() { return Head.time; }
 };
-
 class Sim
 {
 private:
