@@ -82,10 +82,10 @@ private:
     State *s;   //绑定State
 public:
     Evt(State *a) : Head(event(0, NULL)) { s = a; }
-    void AddEvt(int t, auto foo, int n);
+    void AddEvt(int t, void (State::*foo)(int), int n=0);
     void EvtHappen();
-    bool EvtTraverse(auto foo, int i); //遍历是否有foo对应事件,若有返回1
-    void EvtDelete(auto foo);          //删除触发函数为foo的第一个事件.
+    bool EvtTraverse(void (State::*foo)(int), int i); //遍历是否有foo对应事件,若有返回1
+    void EvtDelete(void (State::*foo)(int));          //删除触发函数为foo的第一个事件.
     int time() { return Head.time; }
 };
 class Sim
