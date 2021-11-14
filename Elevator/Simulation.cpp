@@ -9,6 +9,7 @@ extern const int ElevatorNumber; //电梯数
 extern const int T_Into_F;       //乘客进楼时间间隔上限
 extern const int EWT;            //电梯等待时间
 extern const int WaitingTime;    //乘客等待时间
+extern const int PIOE;           //乘客进出电梯时间
 extern const int MovingT;        //电梯移动一楼所用时间
 extern const int Doortime;
 extern const int CloseDoorWaitingtime;
@@ -38,7 +39,10 @@ void State::EvaMove(int eva, elevator::state flag)
 void State::EvaMoveDone(int eva)
 {
     //若有电梯停止事件则触发停止事件：先判断到达指定楼层，然后判断该层有同方向call
-    std::cout << e->time() << "t:\t" << eva << "号电梯到达" << E[eva].floor << "楼.\n";
+    if(E[eva].floor>0)
+    std::cout << e->time() << "t:\t" << eva+1 << "号电梯到达" << E[eva].floor << "楼.\n";
+    else
+    std::cout << e->time() << "t:\t" << eva+1 << "号电梯到达-1楼.\n";
 
     if (E[eva].floor == E[eva].targetfloor || (E[eva].S == elevator::Up && Callup[eva]) || (E[eva].S == elevator::Down && Calldown[eva]))
     {
@@ -50,18 +54,208 @@ void State::EvaMoveDone(int eva)
 }
 void State::FBIOpenTheDoor(int eva)
 {
-    std::cout << e->time() << "t:\t" << eva << "号电梯开门.\n";
+    if (E[eva].S!=elevator::Stop&&E[eva].targetfloor == E[eva].floor)
+    {
+        people *temp = E[eva].passenger;
+        while (temp&&temp->target == E[eva].targetfloor)
+            temp = temp->next;
+        if (temp)
+        {
+            E[eva].targetfloor = temp->target;
+        }
+        //调度算法可优化
+        else if (!((E[eva].S == elevator::Up && Callup[E[eva].floor]) || (E[eva].S == elevator::Down && Calldown[E[eva].floor])))
+            if ((E[eva].S == elevator::Up && Calldown[E[eva].floor]) || (E[eva].S == elevator::Down && Callup[E[eva].floor]))
+            {
+                if (E[eva].S == elevator::Up)
+                {
+                    int i;
+                    for (i = E[eva].floor + 1; i < FLOOR; i++)
+                    {
+                        if (Callup[i])
+                        {
+                            E[eva].targetfloor = i;
+                            break;
+                        }
+                        if (Calldown[i])
+                            E[eva].targetfloor = i;
+                    }
+                    if (E[eva].targetfloor == E[eva].floor)
+                    {
+                        E[eva].S = elevator::Down;
+                    }
+                }
+                if (E[eva].S == elevator::Down)
+                {
+                    int i;
+                    for (i = E[eva].floor - 1; i >= 0; i--)
+                    {
+                        if (Calldown[i])
+                        {
+                            E[eva].targetfloor = i;
+                            break;
+                        }
+                        if (Callup[i])
+                            E[eva].targetfloor = i;
+                    }
+                    if (E[eva].targetfloor == E[eva].floor)
+                    {
+                        E[eva].S = elevator::Up;
+                    }
+                }
+            }
+            else
+            {
+                if (E[eva].S == elevator::Up)
+                {
+                    int i;
+                    for (i = E[eva].floor + 1; i < FLOOR; i++)
+                    {
+                        if (Callup[i])
+                        {
+                            E[eva].targetfloor = i;
+                            break;
+                        }
+                        if (Calldown[i])
+                            E[eva].targetfloor = i;
+                    }
+                    if (E[eva].targetfloor == E[eva].floor)
+                    {
+                        for (i = E[eva].floor - 1; i >= 0; i--)
+                        {
+                            if (Calldown[i])
+                            {
+                                E[eva].targetfloor = i;
+                                break;
+                            }
+                            if (Callup[i])
+                                E[eva].targetfloor = i;
+                        }
+                    }
+                }
+                if (E[eva].S == elevator::Down)
+                {
+                    int i;
+                    for (i = E[eva].floor - 1; i >= 0; i--)
+                    {
+                        if (Calldown[i])
+                        {
+                            E[eva].targetfloor = i;
+                            break;
+                        }
+                        if (Callup[i])
+                            E[eva].targetfloor = i;
+                    }
+                    if (E[eva].targetfloor == E[eva].floor)
+                        for (i = E[eva].floor + 1; i < FLOOR; i++)
+                        {
+                            if (Callup[i])
+                            {
+                                E[eva].targetfloor = i;
+                                break;
+                            }
+                            if (Calldown[i])
+                                E[eva].targetfloor = i;
+                        }
+                }
+                if (E[eva].targetfloor == E[eva].floor)
+                {
+                    E[eva].S = elevator::Stop;
+                    e->AddEvt(e->time() + EWT, HomeSweetHome, eva);
+                }
+                else
+                {
+                    if (E[eva].targetfloor > E[eva].floor)
+                        EvaMove(eva, elevator::Up);
+                    if (E[eva].targetfloor < E[eva].floor)
+                        EvaMove(eva, elevator::Down);
+                }
+                return; //不需要安排开门事件
+            }
+    }
+
+    std::cout << e->time() << "t:\t" << eva+1 << "号电梯开门.\n";
 
     e->AddEvt(e->time(), IOEva, eva);
     e->AddEvt(e->time() + CloseDoorWaitingtime, CloseDoor, eva);
 }
 void State::IOEva(int eva)
 {
-    //多次IO一次完成并输出
-    /////////////////
-    //Wait for make//
-    /////////////////
-    E[eva].IfIO = 1;
+    //根据电梯状态进人
+    people *temp, *p;
+    if (E[eva].passenger && E[eva].passenger->target == E[eva].floor)
+    { //乘客出门判断
+        temp = E[eva].passenger;
+        E[eva].passenger = temp->next;
+        delete temp;
+        e->AddEvt(e->time() + PIOE, IOEva, eva);
+        E[eva].IfIO = 1;
+
+        if(E[eva].floor>0)
+        if(E[eva].floor)
+            std::cout << e->time() << "t:\t" << E[eva].floor << "楼一个乘客离开"<< eva+1 << "号电梯.\n";
+            else
+            std::cout << e->time() << "t:\t-1楼一个乘客离开"<< eva+1 << "号电梯.\n";
+    }
+    else
+    { //乘客进门判断
+        temp = (PInF + E[eva].floor);
+        if (E[eva].S == elevator::Up)
+            while (temp->next && temp->next->target < E[eva].floor)
+                temp = temp->next;
+        if (E[eva].S == elevator::Down)
+            while (temp->next && temp->next->target > E[eva].floor)
+                temp = temp->next;
+        if (temp->next)
+        {
+            p = temp->next;
+            temp->next = p->next;
+            temp = E[eva].passenger;
+            if (E[eva].S == elevator::Up)
+            {
+                if (E[eva].passenger && p->target >= E[eva].passenger->target)
+                {
+                    while (temp->next && p->target > temp->next->target)
+                        temp = temp->next;
+                    p->next = temp->next;
+                    temp->next = p;
+                }
+                else
+                {
+                    E[eva].passenger = p;
+                    p->next = temp;
+                }
+            }
+            if (E[eva].S == elevator::Down)
+            {
+                if (E[eva].passenger && p->target <= E[eva].passenger->target)
+                {
+                    while (temp->next && p->target < temp->next->target)
+                        temp = temp->next;
+                    p->next = temp->next;
+                    temp->next = p;
+                }
+                else
+                {
+                    E[eva].passenger = p;
+                    p->next = temp;
+                }
+            }
+            e->AddEvt(e->time() + PIOE, IOEva, eva);
+            E[eva].IfIO = 1;
+            if(E[eva].floor)
+            std::cout << e->time() << "t:\t" << E[eva].floor << "楼一个乘客进入"<< eva+1 << "号电梯.\n";
+            else
+            std::cout << e->time() << "t:\t-1楼一个乘客进入"<< eva+1 << "号电梯.\n";
+        }
+        else
+        {
+            if (E[eva].S == elevator::Up)
+                Callup[E[eva].floor] = 0;
+            if (E[eva].S == elevator::Down)
+                Calldown[E[eva].floor] = 0;
+        }
+    }
 }
 void State::CloseDoor(int eva)
 {
@@ -78,14 +272,33 @@ void State::CloseDoor(int eva)
     {
         e->AddEvt(e->time() + Doortime, CloseDoor, eva); //设置关门完成事件
         E[eva].IFDO = 0;
-        std::cout << e->time() << "t:\t" << eva << "号电梯关门\n";
+        std::cout << e->time() << "t:\t" << eva+1 << "号电梯关门.\n";
         return;
     }
-
-    ///////////////////////
-    //We'll be right back//
-    ///////////////////////
-    //若当楼call有同方向则再次呼叫FBIOpenTheDoor
+    if (E[eva].passenger)
+        E[eva].targetfloor = E[eva].passenger->target;
+    if (E[eva].targetfloor > E[eva].floor)
+    {
+        E[eva].S = elevator::Up;
+        if (Callup[E[eva].floor])//若当楼call有同方向则再次呼叫FBIOpenTheDoor
+        {
+            Callup[E[eva].floor] = 0;
+            e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, eva);
+        }
+        else
+            EvaMove(eva, elevator::Up);
+    }
+    else
+    {
+        E[eva].S = elevator::Down;
+        if (Calldown[E[eva].floor])
+        {
+            Calldown[E[eva].floor] = 0;
+            e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, eva);
+        }
+        else
+            EvaMove(eva, elevator::Down);
+    }
 }
 
 void State::HomeSweetHome(int eva)
@@ -99,22 +312,24 @@ void State::CallEva(int floor, elevator::state flag) //根据呼叫楼层和上�
     //若存在电梯现楼层到target楼层有呼叫楼层，则不做任何动作
     //若有停止电梯，改变其target为该层
     //若无不做任何动作
-    int stopE = -1, i = 0;
+    int stopE = -1, i = 0, min;
     while (i < ElevatorNumber)
     {
         if (E[i].S == flag && (E[i].floor - floor) * (floor - E[i].targetfloor) >= 0)
             return;
         if (E[i].S == elevator::Stop)
-            stopE = i;
+            if (stopE == -1)
+            {
+                stopE = i;
+                min = (E[i].floor - floor) * (E[i].floor - floor); //取正数
+            }
+            else if ((E[i].floor - floor) * (E[i].floor - floor) < min)
+            {
+                stopE = i;
+                min = (E[i].floor - floor) * (E[i].floor - floor);
+            }
         i++;
     }
-    //
-    //需要更改，改为呼叫最近的stop电梯
-    //
-    //       //=====================|
-    //      ‹‹To be continued...\\//|
-    //       \\=====================|
-
     if (stopE != -1)
     {
         if (floor > E[stopE].floor)
@@ -131,8 +346,8 @@ void State::CallEva(int floor, elevator::state flag) //根据呼叫楼层和上�
         }
         else if (floor == E[stopE].floor)
         {
-        E[stopE].IFDO = 1;
-        e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, stopE);
+            E[stopE].IFDO = 1;
+            e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, stopE);
         }
     }
 }
@@ -140,17 +355,17 @@ void State::PIF(int i = 0)
 {
     e->AddEvt(e->time() + rand() % T_Into_F + 1, PIF); //下一个人进入事件加入事件表，其中加1牺牲一个时间精度消除同时有人进楼的可能
     int floor = rand() % FLOOR;
-
-    //下面是信息输出
-    if (floor)
-        std::cout << e->time() << "t:\t" << floor << "楼进入了1个人.\n";
-    else
-        std::cout << e->time() << "t:\t"
-                  << "-1楼进入了1个人.\n";
-
     int target;
     while ((target = rand() % FLOOR) == floor)
         ; //target!=floor
+
+    //下面是信息输出
+    if (floor)
+        std::cout << e->time() << "t:\t" << floor << "楼进入了1个人,ta要去" << target << "楼.\n";
+    else
+        std::cout << e->time() << "t:\t"
+                  << "-1楼进入了1个人,ta要去" << target << "楼.\n";
+
     auto temp = PInF + floor;
     while (temp->next)
         temp = temp->next;
@@ -237,3 +452,6 @@ void Sim::begin()
     while (1)
         e.EvtHappen();
 }
+//       //=====================|
+//      ‹‹To be continued...\\//|
+//       \\=====================|

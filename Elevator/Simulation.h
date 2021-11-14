@@ -2,11 +2,12 @@
 const int FLOOR = 5;
 const int ElevatorNumber = 2;        //电梯数
 const int T_Into_F = 200;            //乘客进楼时间间隔上限
-const int EWT = 300;                 //电梯等待时间
-const int WaitingTime = 400;         //乘客等待时间
-const int MovingT = 70;              //电梯移动一楼所用时间
+const int EWT = 3000;                //电梯等待时间
+const int WaitingTime = 2000;        //乘客等待时间
+const int PIOE = 20;                 //乘客进出电梯时间
+const int MovingT = 50;              //电梯移动一楼所用时间
 const int Doortime = 20;             //开关门时间
-const int CloseDoorWaitingtime = 40; //关门测试时间
+const int CloseDoorWaitingtime = 30; //关门测试时间
 
 class Evt;
 
@@ -82,7 +83,7 @@ private:
     State *s;   //绑定State
 public:
     Evt(State *a) : Head(event(0, NULL)) { s = a; }
-    void AddEvt(int t, void (State::*foo)(int), int n=0);
+    void AddEvt(int t, void (State::*foo)(int), int n = 0);
     void EvtHappen();
     bool EvtTraverse(void (State::*foo)(int), int i); //遍历是否有foo对应事件,若有返回1
     void EvtDelete(void (State::*foo)(int));          //删除触发函数为foo的第一个事件.
