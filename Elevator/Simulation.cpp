@@ -4,16 +4,6 @@
 #include <cstring>
 #include <stdlib.h>
 #include <time.h>
-extern const int FLOOR;
-extern const int ElevatorNumber; //电梯数
-extern const int T_Into_F;       //乘客进楼时间间隔上限
-extern const int EWT;            //电梯等待时间
-extern const int WaitingTime;    //乘客等待时间
-extern const int PIOE;           //乘客进出电梯时间
-extern const int MovingT;        //电梯移动一楼所用时间
-extern const int Doortime;
-extern const int CloseDoorWaitingtime;
-extern const int FinishTime;
 
 State::State(Evt *p)
 {
