@@ -29,16 +29,16 @@ int main(int argc, char **argv)
     int iBits = 8;
 
     if (input_info.first)
-        infile.open(input_info.second, ios::in);
+        infile.open(input_info.second, ios::in | ios::binary);
     else
-        infile.open("in", ios::in);
+        infile.open("in", ios::in | ios::binary);
     if (!infile)
         exit(-1); //打开文件失败.
 
     if (output_info.first)
-        outfile.open(output_info.second, ios::out | ios::trunc);
+        outfile.open(output_info.second, ios::out | ios::trunc | ios::binary);
     else
-        outfile.open("out", ios::out | ios::trunc);
+        outfile.open("out", ios::out | ios::trunc | ios::binary);
     if (!outfile)
         exit(-1); //打开文件失败.
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
         if (Bits.first)
             iBits = stoi(Bits.second);
 
-        outfile<<iBits;
+        outfile.write((char *)&iBits, sizeof(Tpointer));
 
         Huffman *pH = new Huffman(iBits);
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     }
     else if (cmdOptionExists(argv, argv + argc, "-d"))
     {
-        infile>>iBits;
+        infile.read((char *)&iBits, sizeof(iBits));
 
         Huffman *pH = new Huffman(iBits);
 

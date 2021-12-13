@@ -11,19 +11,18 @@ int main(int argc, char **argv)
 
     int iBits = 8;
 
-    infile.open("input.txt", ios::in);
+    infile.open("out", ios::in | ios::binary);
 
     if (!infile)
         exit(-1); //打开文件失败.
 
-    outfile.open("out", ios::out | ios::trunc);
+    outfile.open("output.txt", ios::out | ios::trunc | ios::binary);
     if (!outfile)
         exit(-1); //打开文件失败.
 
-    if (1)
+    if (0)
     {
-
-        outfile << iBits;
+        outfile.write((char *)&iBits, sizeof(Tpointer));
 
         Huffman *pH = new Huffman(iBits);
 
@@ -33,7 +32,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        infile >> iBits;
+        infile.read((char *)&iBits, sizeof(iBits));
 
         Huffman *pH = new Huffman(iBits);
 

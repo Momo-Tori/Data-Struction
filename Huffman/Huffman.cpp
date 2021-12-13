@@ -68,6 +68,7 @@ void Huffman::Compression(fstream &input, fstream &output)
 {
     bool tag = false;
     Tpointer i, j = 0, temp, Maxnum = (1 << (TreeNode::iBits + 1)) - 1;
+    Tpointer TPIO;
     TreeNode *list[Maxnum];
     Tpointer MaxUnitNum = 1 << (TreeNode::iBits);
     TreeNode *table[MaxUnitNum];
@@ -75,9 +76,9 @@ void Huffman::Compression(fstream &input, fstream &output)
         list[i] = new TreeNode;
     for (i = 0; i < MaxUnitNum; i++)
         table[i] = list[i];
-    char c1 = 0;
-    input >> c1;
-    while (1)
+    char c1 = 0, cIO;
+    input.read(&c1, sizeof(char));
+    while (!tag)
     {
         i = TreeNode::iBits;
         temp = 0;
@@ -90,7 +91,7 @@ void Huffman::Compression(fstream &input, fstream &output)
             if (j == 7)
             {
                 j = 0;
-                input >> c1;
+                input.read(&c1, sizeof(char));
                 if (tag = input.eof())
                 {
                     temp <<= i;
@@ -100,9 +101,7 @@ void Huffman::Compression(fstream &input, fstream &output)
             else
                 j++;
         }
-        ++(*list[temp]); //权加一
-        if (tag)
-            break;
+        ++(*list[temp]);     //权加一
     }                        //最后一个单元放temp左边，右边填充0
     Tpointer k = 0, num = 0; //num为除去weight=0后的单元个数.
     while (k < MaxUnitNum)
@@ -135,22 +134,30 @@ void Huffman::Compression(fstream &input, fstream &output)
         num++;
     }
     TreeNode::print(list);
-    output << num;
+    TPIO = num;
+    output.write((char *)&TPIO, sizeof(Tpointer));
     i = 0;
     while (i < num)
     {
-        output << (list[i]->lch()) << (list[i]->rch()) << (list[i]->d());
+        TPIO = list[i]->lch();
+        output.write((char *)&TPIO, sizeof(Tpointer));
+        TPIO = list[i]->rch();
+        output.write((char *)&TPIO, sizeof(Tpointer));
+        TPIO = list[i]->d();
+        output.write((char *)&TPIO, sizeof(Tpointer));
         i++;
     }
     input.clear();
     input.seekg(0);
+    tag=false;
     j = 0;
     c1 = 0;
     char c2 = 0;
-    input >> c1;
+    input.read(&c1, sizeof(char));
+
     int l = 0;
     string s;
-    while (1)
+    while (!tag)
     {
         i = TreeNode::iBits;
         temp = 0;
@@ -163,7 +170,8 @@ void Huffman::Compression(fstream &input, fstream &output)
             if (j == 7)
             {
                 j = 0;
-                input >> c1;
+                input.read(&c1, sizeof(char));
+
                 if (tag = input.eof())
                 {
                     temp <<= i;
@@ -181,7 +189,7 @@ void Huffman::Compression(fstream &input, fstream &output)
             l++;
             if (l == 8)
             {
-                output << c2;
+                output.write(&c2, sizeof(char));
                 c2 = 0;
                 l = 0;
             }
@@ -192,51 +200,113 @@ void Huffman::Compression(fstream &input, fstream &output)
             if (l != 0)
             {
                 c2 <<= (8 - l);
-                output << c2 << 8 - l;
+                output.write(&c2, sizeof(char));
+                cIO = 8 - l;
+                output.write(&cIO, sizeof(char));
             } //处理结尾的填充个数.
             else
-                output << l;
-            break;
+            {
+                cIO = l;
+                output.write(&cIO, sizeof(char));
+            }
         }
     }
+    cout << "Compression succeeded." << endl;
 }
 void Huffman::DeCompression(fstream &input, fstream &output)
 {
-    /*
-streampos sp2=in.tellg();//当前位置
-in.seekg(sp2);
-
-*/
-
-    /*
-      char c1, c2 = c1 = 0;
-      input >> c1;
-    if (!input.eof())
-        while (1)
+    Tpointer num, i = 0, l, r, data;
+    int j, m;
+    Tpointer k;
+    input.read((char *)&num, sizeof(Tpointer));
+    bool tag = false; //文件读取结束的tag
+    /////////////////////////////////////
+    TreeNode **list=new TreeNode* [num];
+    /////////////////////////////////////
+    while (i < num)
+    {
+        input.read((char *)&l, sizeof(Tpointer));
+        input.read((char *)&r, sizeof(Tpointer));
+        input.read((char *)&data, sizeof(Tpointer));
+        list[i] = new TreeNode(l, r, data);
+        i++;
+    }
+    char c1, c2, c3, co = c3 = c2 = c1 = 0;
+    input.read(&c1, sizeof(char));
+    input.read(&c2, sizeof(char));
+    input.read(&c3, sizeof(char));
+    TreeNode *pTemp;
+    tag = input.eof();
+    j = m = 0;
+    k = 0;
+    pTemp = list[0];
+    l = pTemp->lch();
+    r = pTemp->rch();
+    while (!tag)
+    {
+        while (j < 8)
         {
-            i = TreeNode::iBits;
-            temp = 0;
-            while (i > 0)
+            pTemp = (c1 < 0) ? list[r] : list[l];
+            c1 <<= 1;
+            j++;
+            l = pTemp->lch();
+            r = pTemp->rch();
+            if (l == -1)
             {
-                temp <<= 1;
-                temp+=(c1>>7)&0x01;
-                c1 <<= 1;
-                if (j == 7)
+                k = (1 << (TreeNode::iBits - 1));
+                data = pTemp->d();
+                while (k != 0)
                 {
-                    j = 0;
-                    c1 = c2;
-                    input >> c2;
-                    if (input.eof())
-                        break;
+                    co <<= 1;
+                    co = (data & k) ? co + 1 : co;
+                    m++;
+                    if (m == 8)
+                    {
+                        output.write(&co, sizeof(char));
+                        m = 0;
+                    }
+                    k >>= 1;
                 }
-                else
-                    j++;
-                i--;
+                pTemp = list[0];
+                l = pTemp->lch();
+                r = pTemp->rch();
             }
-            ++(*list[temp]); //权加一
         }
+        c1 = c2;
+        c2 = c3;
+        j = 0;
+        input.read(&c3, sizeof(char));
 
-    if (TreeNode::iBits / 8) //不是8的整数，则还有4bits需要读出.
-        ;
-        */
+        tag = input.eof();
+    }
+    j = 8 - (int)c2;
+    while (j > 0)
+    {
+        pTemp = (c1 < 0) ? list[r] : list[l];
+        c1 <<= 1;
+        j--;
+        l = pTemp->lch();
+        r = pTemp->rch();
+        if (l == -1)
+        {
+            k = (1 << (TreeNode::iBits - 1));
+            data = pTemp->d();
+            while (k != 0)
+            {
+                co <<= 1;
+                co = (data & k) ? co + 1 : co;
+                m++;
+                if (m == 8)
+                {
+                    output.write(&co, sizeof(char));
+                    m = 0;
+                }
+                k >>= 1;
+            }
+            pTemp = list[0];
+            l = pTemp->lch();
+            r = pTemp->rch();
+        }
+    }
+    cout << "Decompression succeeded." << endl;
 }

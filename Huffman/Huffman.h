@@ -26,6 +26,12 @@ public:
         weight = 0;
         data = 0;
     }
+    TreeNode(Tpointer l,Tpointer r,Tpointer d)
+    {
+        lchild = l;
+        rchild = r;
+        data = d;
+    }
     cnt W() { return weight; }
     void setW(cnt wt){weight=wt;}
     Tpointer lch() { return lchild; }
