@@ -33,14 +33,20 @@ int main(int argc, char **argv)
     else
         infile.open("in", ios::in | ios::binary);
     if (!infile)
+    {
+        cout << "Failed to open input file.";
         exit(-1); //打开文件失败.
+    }
 
     if (output_info.first)
         outfile.open(output_info.second, ios::out | ios::trunc | ios::binary);
     else
         outfile.open("out", ios::out | ios::trunc | ios::binary);
     if (!outfile)
+    {
+        cout << "Failed to open output file.";
         exit(-1); //打开文件失败.
+    }
 
     if (cmdOptionExists(argv, argv + argc, "-c"))
     {

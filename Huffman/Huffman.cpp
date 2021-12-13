@@ -1,5 +1,4 @@
 #include "Huffman.h"
-#include <iomanip>
 
 inline string Int2cBit(Tpointer data)
 {
@@ -19,42 +18,40 @@ inline string Int2cBit(Tpointer data)
 int a;
 string sOut;
 
-void DFS(TreeNode *list[], Tpointer i)
+void DFS(TreeNode *list[], Tpointer i,char c)
 {
     Tpointer l = list[i]->lch();
     Tpointer r = list[i]->rch();
-    cout << "w:" << list[i]->W() << '\t';
-    if (l == -1 && r == -1)
+    a++;
+    if (l != -1)
+    {
+        sOut = sOut + '1';
+        DFS(list, r,'r');
+        sOut.pop_back();
+    }
+    for (int j = a-1; j > 0; j--)
+        cout << '\t';
+    cout <<c<<':';
+    if (l == -1)
     {
         list[i]->sets(sOut);
-        cout << "d:" << Int2cBit(list[i]->d()) << " " << list[i]->sout() << '\n';
+        cout << "w:" << list[i]->W() << " d:" << Int2cBit(list[i]->d()) << endl;
     }
     else
+        cout << "node" <<endl;
+    if (l != -1)
     {
-        a++;
-        if (l != -1)
-        {
-            sOut = sOut + '0';
-            DFS(list, l);
-            sOut.pop_back();
-        }
-        if (r != -1)
-        {
-            sOut = sOut + '1';
-            int j = a;
-            while (j-- > 0)
-                cout << '\t';
-            DFS(list, r);
-            sOut.pop_back();
-        }
-        a--;
+        sOut = sOut + '0';
+        DFS(list, l,'l');
+        sOut.pop_back();
     }
+    a--;
 }
 
 void TreeNode::print(TreeNode *list[])
 {
     a = 0;
-    DFS(list, 0);
+    DFS(list, 0,' ');
 }
 
 bool compare(TreeNode *&t1, TreeNode *&t2)
@@ -149,7 +146,7 @@ void Huffman::Compression(fstream &input, fstream &output)
     }
     input.clear();
     input.seekg(0);
-    tag=false;
+    tag = false;
     j = 0;
     c1 = 0;
     char c2 = 0;
@@ -221,7 +218,7 @@ void Huffman::DeCompression(fstream &input, fstream &output)
     input.read((char *)&num, sizeof(Tpointer));
     bool tag = false; //文件读取结束的tag
     /////////////////////////////////////
-    TreeNode **list=new TreeNode* [num];
+    TreeNode **list = new TreeNode *[num];
     /////////////////////////////////////
     while (i < num)
     {
