@@ -1,7 +1,4 @@
 #include "Huffman.h"
-#include <algorithm>
-
-using namespace std;
 
 int TreeNode::iBits;
 
