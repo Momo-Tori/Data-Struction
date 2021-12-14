@@ -18,7 +18,7 @@ inline string Int2cBit(Tpointer data)
 int a;
 string sOut;
 
-void DFS(TreeNode *list[], Tpointer i,char c)
+void DFS(TreeNode *list[], Tpointer i, char c)
 {
     Tpointer l = list[i]->lch();
     Tpointer r = list[i]->rch();
@@ -26,23 +26,23 @@ void DFS(TreeNode *list[], Tpointer i,char c)
     if (l != -1)
     {
         sOut = sOut + '1';
-        DFS(list, r,'r');
+        DFS(list, r, 'r');
         sOut.pop_back();
     }
-    for (int j = a-1; j > 0; j--)
+    for (int j = a - 1; j > 0; j--)
         cout << '\t';
-    cout <<c<<':';
+    cout << c << ':';
     if (l == -1)
     {
         list[i]->sets(sOut);
         cout << "w:" << list[i]->W() << " d:" << Int2cBit(list[i]->d()) << endl;
     }
     else
-        cout << "node" <<endl;
+        cout << "node" << endl;
     if (l != -1)
     {
         sOut = sOut + '0';
-        DFS(list, l,'l');
+        DFS(list, l, 'l');
         sOut.pop_back();
     }
     a--;
@@ -51,7 +51,7 @@ void DFS(TreeNode *list[], Tpointer i,char c)
 void TreeNode::print(TreeNode *list[])
 {
     a = 0;
-    DFS(list, 0,' ');
+    DFS(list, 0, ' ');
 }
 
 bool compare(TreeNode *&t1, TreeNode *&t2)
@@ -59,7 +59,7 @@ bool compare(TreeNode *&t1, TreeNode *&t2)
     return t1->W() > t2->W();
 }
 
-//outfile格式：iBits,num,(TreeNode->l,TreeNode->r,TreeNode->data),data,NumberOfFilling.
+//outfile格式：iBits,num,填充最后一个单元0的个数,(TreeNode->l,TreeNode->r,TreeNode->data),data,NumberOfFilling.
 
 void Huffman::Compression(fstream &input, fstream &output)
 {
@@ -70,9 +70,9 @@ void Huffman::Compression(fstream &input, fstream &output)
     Tpointer MaxUnitNum = 1 << (TreeNode::iBits);
     TreeNode **table = new TreeNode *[MaxUnitNum];
     for (i = 0; i < Maxnum; i++)
-        list[i] = new TreeNode;
+        list[i] = NULL;
     for (i = 0; i < MaxUnitNum; i++)
-        table[i] = list[i];
+        table[i] = NULL;
     char c1 = 0, cIO;
     input.read(&c1, sizeof(char));
     while (!tag)
@@ -98,20 +98,26 @@ void Huffman::Compression(fstream &input, fstream &output)
             else
                 j++;
         }
-        ++(*list[temp]);     //权加一
+        if (list[temp])
+            ++(*list[temp]); //权加一
+        else
+        {
+            table[temp] = list[temp] = new TreeNode;
+            ++(*list[temp]);
+        }
     }                        //最后一个单元放temp左边，右边填充0
     Tpointer k = 0, num = 0; //num为除去weight=0后的单元个数.
+    cIO = (char)i;
     while (k < MaxUnitNum)
     {
-        if (list[k]->W() != 0)
+        if (list[k])
         {
             list[k]->SetData(k);
             TreeNode *ptemp;
             if (k != num)
             {
-                ptemp = list[num];
                 list[num] = list[k];
-                list[k] = ptemp;
+                list[k] = NULL;
             }
             num++;
         }
@@ -122,17 +128,18 @@ void Huffman::Compression(fstream &input, fstream &output)
     {
         sort(list, list + last, compare);
         TreeNode *ptemp;
-        ptemp = list[num];
         list[num] = list[last - 2];
-        list[last - 2] = ptemp;
+        ptemp = list[last - 2] = new TreeNode;
         ptemp->setChild(last - 1, num);
         ptemp->setW(list[last - 1]->W() + list[num]->W());
         last--;
         num++;
     }
     TreeNode::print(list);
+    cout << "Tree Done\n";
     TPIO = num;
     output.write((char *)&TPIO, sizeof(Tpointer));
+    output.write(&cIO, sizeof(char));
     i = 0;
     while (i < num)
     {
@@ -215,8 +222,10 @@ void Huffman::DeCompression(fstream &input, fstream &output)
     Tpointer num, i = 0, l, r, data;
     int j, m;
     Tpointer k;
-    input.read((char *)&num, sizeof(Tpointer));
     bool tag = false; //文件读取结束的tag
+    input.read((char *)&num, sizeof(Tpointer));
+    char ct;
+    input.read(&ct, sizeof(char));
     TreeNode **list = new TreeNode *[num];
     while (i < num)
     {
@@ -271,7 +280,6 @@ void Huffman::DeCompression(fstream &input, fstream &output)
         c2 = c3;
         j = 0;
         input.read(&c3, sizeof(char));
-
         tag = input.eof();
     }
     j = 8 - (int)c2;
@@ -286,7 +294,8 @@ void Huffman::DeCompression(fstream &input, fstream &output)
         {
             k = (1 << (TreeNode::iBits - 1));
             data = pTemp->d();
-            while (k != 0)
+            Tpointer judge=(ct)?(1<<(ct-1)):0;
+            while (k != judge)
             {
                 co <<= 1;
                 co = (data & k) ? co + 1 : co;

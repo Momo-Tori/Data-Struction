@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
     fstream outfile;
 
-    int iBits = 24;
+    int iBits = 8;
 
     infile.open("input.txt", ios::in | ios::binary);
 
