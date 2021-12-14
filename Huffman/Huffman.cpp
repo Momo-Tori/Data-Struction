@@ -66,9 +66,9 @@ void Huffman::Compression(fstream &input, fstream &output)
     bool tag = false;
     Tpointer i, j = 0, temp, Maxnum = (1 << (TreeNode::iBits + 1)) - 1;
     Tpointer TPIO;
-    TreeNode *list[Maxnum];
+    TreeNode **list = new TreeNode *[Maxnum];
     Tpointer MaxUnitNum = 1 << (TreeNode::iBits);
-    TreeNode *table[MaxUnitNum];
+    TreeNode **table = new TreeNode *[MaxUnitNum];
     for (i = 0; i < Maxnum; i++)
         list[i] = new TreeNode;
     for (i = 0; i < MaxUnitNum; i++)
@@ -217,9 +217,7 @@ void Huffman::DeCompression(fstream &input, fstream &output)
     Tpointer k;
     input.read((char *)&num, sizeof(Tpointer));
     bool tag = false; //文件读取结束的tag
-    /////////////////////////////////////
     TreeNode **list = new TreeNode *[num];
-    /////////////////////////////////////
     while (i < num)
     {
         input.read((char *)&l, sizeof(Tpointer));
