@@ -9,18 +9,18 @@ int main(int argc, char **argv)
 
     fstream outfile;
 
-    int iBits = 8;
+    int iBits = 14;
 
-    infile.open("input.txt", ios::in | ios::binary);
+    infile.open("out", ios::in | ios::binary);
 
     if (!infile)
         exit(-1); //打开文件失败.
 
-    outfile.open("out", ios::out | ios::trunc | ios::binary);
+    outfile.open("output.txt", ios::out | ios::trunc | ios::binary);
     if (!outfile)
         exit(-1); //打开文件失败.
 
-    if (1)
+    if (0)
     {
         outfile.write((char *)&iBits, sizeof(Tpointer));
 

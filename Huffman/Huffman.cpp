@@ -175,7 +175,6 @@ void Huffman::Compression(fstream &input, fstream &output)
             {
                 j = 0;
                 input.read(&c1, sizeof(char));
-
                 if (tag = input.eof())
                 {
                     temp <<= i;
@@ -199,21 +198,18 @@ void Huffman::Compression(fstream &input, fstream &output)
             }
             s.erase(s.begin());
         }
-        if (tag)
-        {
-            if (l != 0)
-            {
-                c2 <<= (8 - l);
-                output.write(&c2, sizeof(char));
-                cIO = 8 - l;
-                output.write(&cIO, sizeof(char));
-            } //处理结尾的填充个数.
-            else
-            {
-                cIO = l;
-                output.write(&cIO, sizeof(char));
-            }
-        }
+    }
+    if (l != 0)
+    {
+        c2 <<= (8 - l);
+        output.write(&c2, sizeof(char));
+        cIO = 8 - l;
+        output.write(&cIO, sizeof(char));
+    } //处理结尾的填充个数.
+    else
+    {
+        cIO = l;
+        output.write(&cIO, sizeof(char));
     }
     cout << "Compression succeeded." << endl;
 }
@@ -294,7 +290,7 @@ void Huffman::DeCompression(fstream &input, fstream &output)
         {
             k = (1 << (TreeNode::iBits - 1));
             data = pTemp->d();
-            Tpointer judge=(ct)?(1<<(ct-1)):0;
+            Tpointer judge = (j == 0) ? ((ct) ? (1 << (ct - 1)) : 0) : 0;
             while (k != judge)
             {
                 co <<= 1;
