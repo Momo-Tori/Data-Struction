@@ -1,5 +1,6 @@
 #include "Huffman.h"
 
+/* 将整数的位模式转化为字符串 */
 inline string Int2cBit(Tpointer data)
 {
     string s;
@@ -15,9 +16,9 @@ inline string Int2cBit(Tpointer data)
     return s;
 }
 
+/* 深搜打印 */
 int a;
 string sOut;
-
 void DFS(TreeNode *list[], Tpointer i, char c)
 {
     Tpointer l = list[i]->lch();
@@ -59,8 +60,8 @@ bool compare(TreeNode *&t1, TreeNode *&t2)
     return t1->W() > t2->W();
 }
 
-//outfile格式：iBits,num,填充最后一个单元0的个数,(TreeNode->l,TreeNode->r,TreeNode->data),data,NumberOfFilling.
-
+/* outfile格式：iBits,num,填充最后一个单元0的个数,(TreeNode->l,TreeNode->r,TreeNode->data),data,NumberOfFilling. */
+/* 下面是压缩函数 */
 void Huffman::Compression(fstream &input, fstream &output)
 {
     bool tag = false;
@@ -69,10 +70,13 @@ void Huffman::Compression(fstream &input, fstream &output)
     TreeNode **list = new TreeNode *[Maxnum];
     Tpointer MaxUnitNum = 1 << (TreeNode::iBits);
     TreeNode **table = new TreeNode *[MaxUnitNum];
+    /* 初始化 */
     for (i = 0; i < Maxnum; i++)
         list[i] = NULL;
     for (i = 0; i < MaxUnitNum; i++)
         table[i] = NULL;
+
+    /* 读入并在对应位置权重加一 */
     char c1 = 0, cIO;
     input.read(&c1, sizeof(char));
     while (!tag)
@@ -108,6 +112,7 @@ void Huffman::Compression(fstream &input, fstream &output)
     }                        //最后一个单元放temp左边，右边填充0
     Tpointer k = 0, num = 0; //num为除去weight=0后的单元个数.
     cIO = (char)i;
+    /* 去除权重为0的单元，以便后面进行排序 */
     while (k < MaxUnitNum)
     {
         if (list[k])
@@ -124,6 +129,7 @@ void Huffman::Compression(fstream &input, fstream &output)
         k++;
     }
     Tpointer last = num;
+    /* 排序，并建立节点关系 */
     while (last > 1)
     {
         sort(list, list + last, compare);
@@ -135,12 +141,14 @@ void Huffman::Compression(fstream &input, fstream &output)
         last--;
         num++;
     }
+    /* 打印节点，并且将节点对应的压缩后的二进制路径存入节点 */
     TreeNode::print(list);
     cout << "Tree Done\n";
     TPIO = num;
     output.write((char *)&TPIO, sizeof(Tpointer));
     output.write(&cIO, sizeof(char));
     i = 0;
+    /* 将节点关系输出到输出文件 */
     while (i < num)
     {
         TPIO = list[i]->lch();
@@ -161,6 +169,8 @@ void Huffman::Compression(fstream &input, fstream &output)
 
     int l = 0;
     string s;
+
+    /* 第二次读取输入，并读取节点存储的路径输出 */
     while (!tag)
     {
         i = TreeNode::iBits;
@@ -213,12 +223,16 @@ void Huffman::Compression(fstream &input, fstream &output)
     }
     cout << "Compression succeeded." << endl;
 }
+
+/* 解压函数 */
 void Huffman::DeCompression(fstream &input, fstream &output)
 {
     Tpointer num, i = 0, l, r, data;
     int j, m;
     Tpointer k;
     bool tag = false; //文件读取结束的tag
+
+    /* 读取文件头，建立各种关键信息以及Huffman树 */
     input.read((char *)&num, sizeof(Tpointer));
     char ct;
     input.read(&ct, sizeof(char));
@@ -242,6 +256,8 @@ void Huffman::DeCompression(fstream &input, fstream &output)
     pTemp = list[0];
     l = pTemp->lch();
     r = pTemp->rch();
+
+    /* 根据输入寻找节点，并将原数据输出到目标文件 */
     while (!tag)
     {
         while (j < 8)
@@ -278,6 +294,8 @@ void Huffman::DeCompression(fstream &input, fstream &output)
         input.read(&c3, sizeof(char));
         tag = input.eof();
     }
+
+    /* 对尾部的特殊处理 */
     j = 8 - (int)c2;
     while (j > 0)
     {

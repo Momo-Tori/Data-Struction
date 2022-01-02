@@ -18,29 +18,30 @@ State::State(Evt *p)
 void State::EvaMove(int eva, elevator::state flag)
 {
     //在此时便改变电梯楼层
-    //用一个整数队列存储移动的顺序
-    if (!e->EvtTraverse(EvaMoveDone, eva) && !E[eva].IfIO) //n号电梯没有移动&&未开门
+    if (!e->EvtTraverse(&State::EvaMoveDone, eva) && !E[eva].IfIO) //n号电梯没有移动&&未开门
     {
         if (flag == elevator::Up)
             E[eva].floor++;
         if (flag == elevator::Down)
             E[eva].floor--;
-        e->AddEvt(e->time() + MovingT, EvaMoveDone, eva);
+        e->AddEvt(e->time() + MovingT, &State::EvaMoveDone, eva);
     }
 }
 void State::EvaMoveDone(int eva)
 {
-    //若有电梯停止事件则触发停止事件：先判断到达指定楼层，然后判断该层有同方向call
     if (E[eva].floor > 0)
         std::cout << e->time() << "t:\t " << E[eva].floor << "楼\t" << eva + 1 << "号电梯\t到达\n";
     else
         std::cout << e->time() << "t:\t"
                   << "-1楼\t" << eva + 1 << "号电梯\t到达\n";
 
-    if ((E[eva].floor == E[eva].targetfloor) || (E[eva].S == elevator::Up && Callup[E[eva].floor]) || (E[eva].S == elevator::Down && Calldown[E[eva].floor]))
+    //若有电梯停止事件则触发停止事件：先判断到达指定楼层，然后判断该层有同方向call
+    if ((E[eva].floor == E[eva].targetfloor) || 
+    (E[eva].S == elevator::Up && Callup[E[eva].floor]) || 
+    (E[eva].S == elevator::Down && Calldown[E[eva].floor]))
     {
         E[eva].IFDO = 1;
-        e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, eva);
+        e->AddEvt(e->time() + Doortime, &State::FBIOpenTheDoor, eva);
     }
     else
         EvaMove(eva, E[eva].S);
@@ -57,7 +58,6 @@ void State::FBIOpenTheDoor(int eva)
             E[eva].targetfloor = temp->target;
         }
         //调度算法
-        //可优化
         else if (((E[eva].S == elevator::Up && Callup[E[eva].floor]) || (E[eva].S == elevator::Down && Calldown[E[eva].floor])))
         {
             if (E[eva].S == elevator::Up)
@@ -163,7 +163,7 @@ void State::FBIOpenTheDoor(int eva)
             if (E[eva].targetfloor == E[eva].floor)
             {
                 E[eva].S = elevator::Stop;
-                e->AddEvt(e->time() + EWT, HomeSweetHome, eva);
+                e->AddEvt(e->time() + EWT, &State::HomeSweetHome, eva);
             }
             else if (E[eva].targetfloor > E[eva].floor)
                 E[eva].S = elevator::Up;
@@ -189,8 +189,8 @@ void State::FBIOpenTheDoor(int eva)
     else
         std::cout << e->time() << "t:\t-1楼\t" << eva + 1 << "号电梯\t开门.\n";
 
-    e->AddEvt(e->time() + PIOE, IOEva, eva);
-    e->AddEvt(e->time() + CloseDoorWaitingtime, CloseDoor, eva);
+    e->AddEvt(e->time() + PIOE, &State::IOEva, eva);
+    e->AddEvt(e->time() + CloseDoorWaitingtime, &State::CloseDoor, eva);
 }
 void State::IOEva(int eva)
 {
@@ -201,7 +201,7 @@ void State::IOEva(int eva)
         temp = E[eva].passenger;
         E[eva].passenger = temp->next;
         delete temp;
-        e->AddEvt(e->time() + PIOE, IOEva, eva);
+        e->AddEvt(e->time() + PIOE, &State::IOEva, eva);
         E[eva].IfIO = 1;
 
         if (E[eva].floor)
@@ -253,7 +253,7 @@ void State::IOEva(int eva)
                     p->next = temp;
                 }
             }
-            e->AddEvt(e->time() + PIOE, IOEva, eva);
+            e->AddEvt(e->time() + PIOE, &State::IOEva, eva);
             E[eva].IfIO = 1;
             if (E[eva].floor)
                 std::cout << e->time() << "t:\t " << E[eva].floor << "楼\t" << eva + 1 << "号电梯\t一个乘客进入电梯.\n";
@@ -277,12 +277,12 @@ void State::CloseDoor(int eva)
     if (E[eva].IfIO)
     {
         E[eva].IfIO = 0;
-        e->AddEvt(e->time() + CloseDoorWaitingtime, CloseDoor, eva); //设置下一次检查
+        e->AddEvt(e->time() + CloseDoorWaitingtime, &State::CloseDoor, eva); //设置下一次检查
         return;
     }
     else if (E[eva].IFDO)
     {
-        e->AddEvt(e->time() + Doortime, CloseDoor, eva); //设置关门完成事件
+        e->AddEvt(e->time() + Doortime, &State::CloseDoor, eva); //设置关门完成事件
         E[eva].IFDO = 0;
         if (E[eva].floor)
             std::cout << e->time() << "t:\t " << E[eva].floor << "楼\t" << eva + 1 << "号电梯\t关门.\n";
@@ -300,7 +300,7 @@ void State::CloseDoor(int eva)
             if (Callup[E[eva].floor]) //若当楼call有同方向则再次呼叫FBIOpenTheDoor
             {
                 Callup[E[eva].floor] = 0;
-                e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, eva);
+                e->AddEvt(e->time() + Doortime, &State::FBIOpenTheDoor, eva);
             }
             else
                 EvaMove(eva, elevator::Up);
@@ -311,7 +311,7 @@ void State::CloseDoor(int eva)
             if (Calldown[E[eva].floor])
             {
                 Calldown[E[eva].floor] = 0;
-                e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, eva);
+                e->AddEvt(e->time() + Doortime, &State::FBIOpenTheDoor, eva);
             }
             else
                 EvaMove(eva, elevator::Down);
@@ -319,8 +319,8 @@ void State::CloseDoor(int eva)
         else
         {
             E[eva].S = elevator::Stop;
-            if (e->EvtTraverse(HomeSweetHome, eva))
-                e->AddEvt(e->time() + EWT, HomeSweetHome, eva);
+            if (e->EvtTraverse(&State::HomeSweetHome, eva))
+                e->AddEvt(e->time() + EWT, &State::HomeSweetHome, eva);
         }
     }
 }
@@ -380,14 +380,14 @@ void State::CallEva(int floor, elevator::state flag) //根据呼叫楼层和上�
         {
             E[stopE].IFDO = 1;
             E[stopE].S = flag;
-            e->AddEvt(e->time() + Doortime, FBIOpenTheDoor, stopE);
+            e->AddEvt(e->time() + Doortime, &State::FBIOpenTheDoor, stopE);
         }
-        e->EvtDelete(HomeSweetHome, stopE);
+        e->EvtDelete(&State::HomeSweetHome, stopE);
     }
 }
 void State::PIF(int i = 0)
 {
-    e->AddEvt(e->time() + rand() % T_Into_F + 1, PIF); //下一个人进入事件加入事件表，其中加1牺牲一个时间精度消除同时有人进楼的可能
+    e->AddEvt(e->time() + rand() % T_Into_F + 1, &State::PIF); //下一个人进入事件加入事件表，其中加1牺牲一个时间精度消除同时有人进楼的可能
     int floor = rand() % FLOOR;
     int target;
     while ((target = rand() % FLOOR) == floor)
@@ -438,8 +438,8 @@ void State::PIF(int i = 0)
             CallEva(floor, elevator::Down);
         }
     }
-    if (!e->EvtTraverse(RushB, floor)) //第n层楼没有人想离开，即这是第一个人
-        e->AddEvt(temp->giveuptime, RushB, floor);
+    if (!e->EvtTraverse(&State::RushB, floor)) //第n层楼没有人想离开，即这是第一个人
+        e->AddEvt(temp->giveuptime, &State::RushB, floor);
 }
 void State::RushB(int floor)
 {
@@ -455,7 +455,7 @@ void State::RushB(int floor)
                       << "-1楼\t\t因时间太长离开了1个人.\n";
     }
     if (PInF[floor].next)
-        e->AddEvt(PInF[floor].next->giveuptime, RushB, floor);
+        e->AddEvt(PInF[floor].next->giveuptime, &State::RushB, floor);
 }
 
 void Evt::AddEvt(int t, void (State::*foo)(int), int n) //添加事件
@@ -470,7 +470,7 @@ void Evt::AddEvt(int t, void (State::*foo)(int), int n) //添加事件
 void Evt::EvtHappen()
 {
     auto temp = Head.next;
-    Head.time = temp->time;
+    Head.time = temp->time;//将当前事件更新为时间事件
     Head.next = temp->next;
     (s->*(temp->Finish))(temp->n); //调用s对应的函数
     delete temp;
@@ -511,6 +511,8 @@ void Sim::begin()
     while (e.time() < FinishTime)
         e.EvtHappen();
 }
-//       //=====================|
-//      ‹‹To be continued...\\//|
-//       \\=====================|
+/* 
+       //=====================|
+      ‹‹To be continued...\\//|
+       \\=====================| 
+*/

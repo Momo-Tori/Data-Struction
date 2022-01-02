@@ -1,5 +1,5 @@
 #include <iostream>
-const int FLOOR = 5;
+const int FLOOR = 40;
 const int ElevatorNumber = 4;        //电梯数
 const int T_Into_F = 200;            //乘客进楼时间间隔上限
 const int EWT = 300;                //电梯等待时间

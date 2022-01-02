@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-m64
+CFLAGS=-m64 -static -O3
 DEPS = Huffman.h
 OBJ = Huffman.o main.o 
 
